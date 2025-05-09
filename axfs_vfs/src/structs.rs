@@ -4,10 +4,16 @@
 #[non_exhaustive]
 pub struct FileSystemInfo;
 
+
+
+///dev number
+pub type DevT = (u32,u32);
+
 /// Node (file/directory) attributes.
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub struct VfsNodeAttr {
+    dev: u64,
     /// File permission mode.
     mode: VfsNodePerm,
     /// File type.
@@ -16,6 +22,20 @@ pub struct VfsNodeAttr {
     size: u64,
     /// Number of 512B blocks allocated.
     blocks: u64,
+    
+    st_ino: u32,
+    nlink: u32,
+    uid: u16,
+    gid: u16,
+    nblk_lo: u32,
+
+    atime:u32,
+    ctime:u32,
+    mtime:u32,
+
+    atime_nse:u32,
+    ctime_nse:u32,
+    mtime_nse:u32,
 }
 
 bitflags::bitflags! {
@@ -199,22 +219,46 @@ impl VfsNodeType {
 impl VfsNodeAttr {
     /// Creates a new `VfsNodeAttr` with the given permission mode, type, size
     /// and number of blocks.
-    pub const fn new(mode: VfsNodePerm, ty: VfsNodeType, size: u64, blocks: u64) -> Self {
+    pub const fn new(dev: u64, mode: VfsNodePerm, ty: VfsNodeType, size: u64, blocks: u64, st_ino: u32, nlink: u32, uid: u16, gid: u16, nblk_lo: u32, atime:u32, ctime:u32, mtime:u32, atime_nsec:u32, mtime_nsec:u32, ctime_nsec:u32) -> Self {
         Self {
+            dev,
             mode,
             ty,
             size,
             blocks,
+            st_ino,
+            nlink,
+            uid,
+            gid,
+            nblk_lo,
+            atime,
+            ctime,
+            mtime,
+            atime_nse:atime_nsec,
+            ctime_nse:ctime_nsec,
+            mtime_nse:mtime_nsec,
         }
     }
 
     /// Creates a new `VfsNodeAttr` for a file, with the default file permission.
     pub const fn new_file(size: u64, blocks: u64) -> Self {
         Self {
+            dev: 0,
             mode: VfsNodePerm::default_file(),
             ty: VfsNodeType::File,
             size,
             blocks,
+            st_ino:0,
+            nlink:0,
+            uid:0,
+            gid:0,
+            nblk_lo:0,
+            atime:0,
+            ctime:0,
+            mtime:0,
+            atime_nse:0,
+            ctime_nse:0,
+            mtime_nse:0,
         }
     }
 
@@ -222,10 +266,22 @@ impl VfsNodeAttr {
     /// permission.
     pub const fn new_dir(size: u64, blocks: u64) -> Self {
         Self {
+            dev: 0,
             mode: VfsNodePerm::default_dir(),
             ty: VfsNodeType::Dir,
             size,
             blocks,
+            st_ino:0,
+            nlink:0,
+            uid:0,
+            gid:0,
+            nblk_lo:0,
+            atime:0,
+            ctime:0,
+            mtime:0,
+            atime_nse:0,
+            ctime_nse:0,
+            mtime_nse:0,
         }
     }
 
@@ -263,6 +319,21 @@ impl VfsNodeAttr {
     pub const fn is_dir(&self) -> bool {
         self.ty.is_dir()
     }
+    
+    pub const fn st_ino(&self) -> u32 {self.st_ino}
+    pub const fn nlink(&self) -> u32 {self.nlink}
+    pub const fn uid(&self) -> u16 {self.uid}
+    pub const fn gid(&self) -> u16 {self.gid}
+    pub const fn nblk_lo(&self) -> u32 {self.nblk_lo}
+
+    pub const fn atime(&self) -> u32{self.atime}
+    pub const fn mtime(&self) -> u32 {self.mtime}
+    pub const fn ctime(&self) -> u32{self.ctime}
+    
+    pub const fn mtime_nse(&self) -> u32 {self.mtime_nse}
+    pub const fn atime_nse(&self) -> u32 {self.atime_nse}
+    pub const fn ctime_nse(&self) -> u32 {self.ctime_nse}
+    pub const fn dev(&self) -> u64 {self.dev}
 }
 
 impl VfsDirEntry {

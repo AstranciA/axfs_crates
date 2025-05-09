@@ -8,8 +8,20 @@ pub struct ZeroDev;
 impl VfsNodeOps for ZeroDev {
     fn get_attr(&self) -> VfsResult<VfsNodeAttr> {
         Ok(VfsNodeAttr::new(
+            0,
             VfsNodePerm::default_file(),
             VfsNodeType::CharDevice,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
             0,
             0,
         ))
