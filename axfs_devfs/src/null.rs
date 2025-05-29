@@ -1,5 +1,4 @@
-use axfs_vfs::{VfsNodeAttr, VfsNodeOps, VfsNodePerm, VfsNodeType, VfsResult};
-
+use axfs_vfs::{VfsError, VfsNodeAttr, VfsNodeOps, VfsNodePerm, VfsNodeRef, VfsNodeType, VfsResult};
 /// A null device behaves like `/dev/null`.
 ///
 /// Nothing can be read and all writes are discarded.
@@ -8,7 +7,7 @@ pub struct NullDev;
 impl VfsNodeOps for NullDev {
     fn get_attr(&self) -> VfsResult<VfsNodeAttr> {
         Ok(VfsNodeAttr::new(
-            22,
+            1,
             VfsNodePerm::default_file(),
             VfsNodeType::CharDevice,
             0,

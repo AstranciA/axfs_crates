@@ -1,13 +1,13 @@
+use alloc::collections::BTreeMap;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use axerrno::LinuxError;
+
 /// Filesystem attributes.
 ///
 /// Currently not used.
 #[non_exhaustive]
 pub struct FileSystemInfo;
-
-
-
-///dev number
-pub type DevT = (u32,u32);
 
 /// Node (file/directory) attributes.
 #[allow(dead_code)]
@@ -36,6 +36,80 @@ pub struct VfsNodeAttr {
     atime_nse:u32,
     ctime_nse:u32,
     mtime_nse:u32,
+}
+
+pub struct VfsINode {
+    attr: VfsNodeAttr,
+    xattrs: BTreeMap<String, Vec<u8>>,
+}
+
+#[derive(Debug)]
+pub enum XattrError {
+    NoAttr,
+    AttrTooBig,
+    InvalidName,
+    NotFound,
+    Exist,
+    NoSpace,
+    NotSupported,
+}
+
+impl From<XattrError> for LinuxError {
+    fn from(err: XattrError) -> Self {
+        match err {
+            XattrError::NoAttr => LinuxError::ENODATA,
+            XattrError::AttrTooBig => LinuxError::E2BIG,
+            XattrError::InvalidName => LinuxError::EINVAL,
+            XattrError::NotFound => LinuxError::ENODATA,
+            XattrError::Exist => LinuxError::EEXIST,
+            XattrError::NoSpace => LinuxError::ENOSPC,
+            XattrError::NotSupported => LinuxError::EPROTONOSUPPORT,
+        }
+    }
+}
+
+pub type XattrResult<T> = Result<T, XattrError>;
+
+impl VfsINode {
+    /// Set an xattr with the given name and value.
+    pub fn setxattr(&mut self, name: &str, value: &[u8], create: bool, replace: bool) -> XattrResult<()> {
+        if name.is_empty() {
+            return Err(XattrError::InvalidName);
+        }
+
+        match self.xattrs.get(name) {
+            Some(_) if create => return Err(XattrError::Exist),
+            None if replace => return Err(XattrError::NotFound),
+            _ => {
+                self.xattrs.insert(name.to_string(), value.to_vec());
+                Ok(())
+            }
+        }
+    }
+
+    /// Get the value of an xattr.
+    pub fn getxattr(&self, name: &str) -> XattrResult<&[u8]> {
+        self.xattrs.get(name).map(|v| v.as_slice()).ok_or(XattrError::NotFound)
+    }
+
+    /// Remove an xattr.
+    pub fn removexattr(&mut self, name: &str) -> XattrResult<()> {
+        if self.xattrs.remove(name).is_some() {
+            Ok(())
+        } else {
+            Err(XattrError::NotFound)
+        }
+    }
+
+    /// List all xattr names. Returns the concatenated null-separated names.
+    pub fn listxattr(&self) -> Vec<u8> {
+        let mut list = Vec::new();
+        for key in self.xattrs.keys() {
+            list.extend_from_slice(key.as_bytes());
+            list.push(0); // null-terminated
+        }
+        list
+    }
 }
 
 bitflags::bitflags! {
