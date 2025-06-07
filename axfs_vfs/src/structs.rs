@@ -2,12 +2,35 @@ use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use axerrno::LinuxError;
+use alloc::ffi::CString;
+use core::ffi::{c_int, c_long, c_ulong};
 
 /// Filesystem attributes.
 ///
 /// Currently not used.
 #[non_exhaustive]
-pub struct FileSystemInfo;
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct FileSystemInfo {
+    /// 文件系统的类型（magic number，用于标识如 ext4, tmpfs 等）
+    pub ftype: u64,
+    /// 最优传输块大小（用于文件系统的 I/O 操作优化）
+    pub bsize: u64,
+    /// 文件系统中数据块的总数量
+    pub blocks: u64,
+    /// 当前空闲的数据块数量（包括超级用户可用）
+    pub bfree: u64,
+    /// 普通用户可用的数据块数量（不包括超级用户保留）
+    pub bavail: u64,
+    /// 文件结点（i-node）总数，表示最多可创建的文件数量
+    pub files: u64,
+    /// 可用的文件结点数
+    pub ffree: u64,
+    /// 文件系统标识符（通常是一个唯一的 ID，用于区分不同的文件系统挂载点）
+    pub fsid: u64,
+    /// 支持的最大文件名长度（单位：字节）
+    pub namelen: u64,
+}
 
 /// Node (file/directory) attributes.
 #[allow(dead_code)]
@@ -36,80 +59,6 @@ pub struct VfsNodeAttr {
     atime_nse:u32,
     ctime_nse:u32,
     mtime_nse:u32,
-}
-
-pub struct VfsINode {
-    attr: VfsNodeAttr,
-    xattrs: BTreeMap<String, Vec<u8>>,
-}
-
-#[derive(Debug)]
-pub enum XattrError {
-    NoAttr,
-    AttrTooBig,
-    InvalidName,
-    NotFound,
-    Exist,
-    NoSpace,
-    NotSupported,
-}
-
-impl From<XattrError> for LinuxError {
-    fn from(err: XattrError) -> Self {
-        match err {
-            XattrError::NoAttr => LinuxError::ENODATA,
-            XattrError::AttrTooBig => LinuxError::E2BIG,
-            XattrError::InvalidName => LinuxError::EINVAL,
-            XattrError::NotFound => LinuxError::ENODATA,
-            XattrError::Exist => LinuxError::EEXIST,
-            XattrError::NoSpace => LinuxError::ENOSPC,
-            XattrError::NotSupported => LinuxError::EPROTONOSUPPORT,
-        }
-    }
-}
-
-pub type XattrResult<T> = Result<T, XattrError>;
-
-impl VfsINode {
-    /// Set an xattr with the given name and value.
-    pub fn setxattr(&mut self, name: &str, value: &[u8], create: bool, replace: bool) -> XattrResult<()> {
-        if name.is_empty() {
-            return Err(XattrError::InvalidName);
-        }
-
-        match self.xattrs.get(name) {
-            Some(_) if create => return Err(XattrError::Exist),
-            None if replace => return Err(XattrError::NotFound),
-            _ => {
-                self.xattrs.insert(name.to_string(), value.to_vec());
-                Ok(())
-            }
-        }
-    }
-
-    /// Get the value of an xattr.
-    pub fn getxattr(&self, name: &str) -> XattrResult<&[u8]> {
-        self.xattrs.get(name).map(|v| v.as_slice()).ok_or(XattrError::NotFound)
-    }
-
-    /// Remove an xattr.
-    pub fn removexattr(&mut self, name: &str) -> XattrResult<()> {
-        if self.xattrs.remove(name).is_some() {
-            Ok(())
-        } else {
-            Err(XattrError::NotFound)
-        }
-    }
-
-    /// List all xattr names. Returns the concatenated null-separated names.
-    pub fn listxattr(&self) -> Vec<u8> {
-        let mut list = Vec::new();
-        for key in self.xattrs.keys() {
-            list.extend_from_slice(key.as_bytes());
-            list.push(0); // null-terminated
-        }
-        list
-    }
 }
 
 bitflags::bitflags! {

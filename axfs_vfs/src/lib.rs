@@ -76,10 +76,12 @@ pub trait VfsOps: Send + Sync {
     }
 
     /// Get the attributes of the filesystem.
-    fn statfs(&self) -> VfsResult<FileSystemInfo> {
+    // fn statfs(&self, _path: *const c_char) -> VfsResult<FileSystemInfo> {
+    //     ax_err!(Unsupported)
+    // }
+    fn statfs(&self, _path: *const c_char, fs_info: *mut FileSystemInfo) -> VfsResult<usize> {
         ax_err!(Unsupported)
     }
-
     /// Get the root directory of the filesystem.
     fn root_dir(&self) -> VfsNodeRef;
 }
