@@ -435,7 +435,36 @@ pub struct VfsNodeAttrX {
     stx_dev_major: u32,
     stx_dev_minor: u32,
 }
-
+impl Default for VfsNodeAttrX {
+    fn default() -> Self {
+        VfsNodeAttrX {
+            stx_mask: 0,
+            stx_blksize: 4096,
+            stx_attributes: 0,
+            stx_nlink: 1,
+            stx_uid: 0,
+            stx_gid: 0,
+            stx_mode: VfsNodePerm::from_bits_truncate(0o644),
+            ty: VfsNodeType::File,
+            stx_ino: 0,
+            stx_size: 0,
+            stx_blocks: 0,
+            stx_attributes_mask: 0,
+            atime: 0,
+            btime: 0,
+            ctime: 0,
+            mtime: 0,
+            atime_nse: 0,
+            btime_nse: 0,
+            ctime_nse: 0,
+            mtime_nse: 0,
+            stx_rdev_major: 0,
+            stx_rdev_minor: 0,
+            stx_dev_major: 0,
+            stx_dev_minor: 0,
+        }
+    }
+}
 impl VfsNodeAttrX {
     /// Creates a new `VfsNodeAttrX` with all fields specified
     pub const fn new(
