@@ -5,6 +5,7 @@ members = [
     "axfs_vfs",
     "axfs_devfs",
     "axfs_ramfs",
+    "axfs_procfs"
 ]
 
 [workspace.package]
