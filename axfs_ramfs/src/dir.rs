@@ -5,7 +5,7 @@ use alloc::{string::String, vec::Vec};
 use axfs_vfs::{VfsDirEntry, VfsNodeAttr, VfsNodeOps, VfsNodeRef, VfsNodeType};
 use axfs_vfs::{VfsError, VfsResult};
 use spin::RwLock;
-
+use axfs_vfs::structs::VfsNodeAttrX;
 use crate::file::FileNode;
 
 /// The directory node in the RAM filesystem.
@@ -74,6 +74,9 @@ impl VfsNodeOps for DirNode {
         Ok(VfsNodeAttr::new_dir(4096, 0))
     }
 
+    fn get_attr_x(&self) -> VfsResult<VfsNodeAttrX> {
+        Ok(VfsNodeAttrX::new_dir(4096, 0))
+    }
     fn parent(&self) -> Option<VfsNodeRef> {
         self.parent.read().upgrade()
     }

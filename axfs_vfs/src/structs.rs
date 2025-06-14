@@ -46,16 +46,15 @@ pub struct VfsNodeAttr {
     /// Number of 512B blocks allocated.
     blocks: u64,
     
-    st_ino: u32,
+    st_ino: u64,
     nlink: u32,
-    uid: u16,
-    gid: u16,
+    uid: u32,
+    gid: u32,
     nblk_lo: u32,
 
     atime:u32,
     ctime:u32,
     mtime:u32,
-
     atime_nse:u32,
     ctime_nse:u32,
     mtime_nse:u32,
@@ -242,7 +241,16 @@ impl VfsNodeType {
 impl VfsNodeAttr {
     /// Creates a new `VfsNodeAttr` with the given permission mode, type, size
     /// and number of blocks.
-    pub const fn new(dev: u64, mode: VfsNodePerm, ty: VfsNodeType, size: u64, blocks: u64, st_ino: u32, nlink: u32, uid: u16, gid: u16, nblk_lo: u32, atime:u32, ctime:u32, mtime:u32, atime_nsec:u32, mtime_nsec:u32, ctime_nsec:u32) -> Self {
+    pub const fn new(
+        dev: u64, 
+        mode: VfsNodePerm, ty: VfsNodeType, 
+        size: u64, blocks: u64, 
+        st_ino: u64, nlink: u32, 
+        uid: u32, gid: u32, 
+        nblk_lo: u32, 
+        atime:u32, ctime:u32, mtime:u32, 
+        atime_nsec:u32, mtime_nsec:u32, ctime_nsec:u32
+    ) -> Self {
         Self {
             dev,
             mode,
@@ -343,10 +351,10 @@ impl VfsNodeAttr {
         self.ty.is_dir()
     }
     
-    pub const fn st_ino(&self) -> u32 {self.st_ino}
+    pub const fn st_ino(&self) -> u64 {self.st_ino}
     pub const fn nlink(&self) -> u32 {self.nlink}
-    pub const fn uid(&self) -> u16 {self.uid}
-    pub const fn gid(&self) -> u16 {self.gid}
+    pub const fn uid(&self) -> u32 {self.uid}
+    pub const fn gid(&self) -> u32 {self.gid}
     pub const fn nblk_lo(&self) -> u32 {self.nblk_lo}
 
     pub const fn atime(&self) -> u32{self.atime}
@@ -357,6 +365,225 @@ impl VfsNodeAttr {
     pub const fn atime_nse(&self) -> u32 {self.atime_nse}
     pub const fn ctime_nse(&self) -> u32 {self.ctime_nse}
     pub const fn dev(&self) -> u64 {self.dev}
+}
+
+// stx_mask 位掩码常量
+pub const STATX_TYPE: u32        = 0x0000_0001;
+pub const STATX_MODE: u32        = 0x0000_0002;
+pub const STATX_NLINK: u32       = 0x0000_0004;
+pub const STATX_UID: u32         = 0x0000_0008;
+pub const STATX_GID: u32         = 0x0000_0010;
+pub const STATX_ATIME: u32       = 0x0000_0020;
+pub const STATX_MTIME: u32       = 0x0000_0040;
+pub const STATX_CTIME: u32       = 0x0000_0080;
+pub const STATX_INO: u32         = 0x0000_0100;
+pub const STATX_SIZE: u32        = 0x0000_0200;
+pub const STATX_BLOCKS: u32      = 0x0000_0400;
+pub const STATX_BASIC_STATS: u32 = 0x0000_07ff; // 以上所有基础字段
+pub const STATX_BTIME: u32       = 0x0000_0800;
+pub const STATX_ALL: u32         = 0x0000_0fff; // 包含 BTIME
+pub const STATX__RESERVED: u32   = 0x8000_0000; // 内部使用，用户应忽略
+
+bitflags::bitflags! {
+    pub struct StatxMask: u32 {
+        const TYPE        = 0x0000_0001;
+        const MODE        = 0x0000_0002;
+        const NLINK       = 0x0000_0004;
+        const UID         = 0x0000_0008;
+        const GID         = 0x0000_0010;
+        const ATIME       = 0x0000_0020;
+        const MTIME       = 0x0000_0040;
+        const CTIME       = 0x0000_0080;
+        const INO         = 0x0000_0100;
+        const SIZE        = 0x0000_0200;
+        const BLOCKS      = 0x0000_0400;
+        const BTIME       = 0x0000_0800;
+        const BASIC_STATS = 0x0000_07ff;
+        const ALL         = 0x0000_0fff;
+    }
+}
+
+pub const STATX_ALL_MASK: StatxMask = StatxMask::ALL;
+
+
+#[allow(dead_code)]
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct VfsNodeAttrX {
+    stx_mask: u32,
+    stx_blksize: u32,
+    stx_attributes: u64,
+    stx_nlink: u32,
+    stx_uid: u32,
+    stx_gid: u32,
+    stx_mode: VfsNodePerm,
+    ty: VfsNodeType,
+    stx_ino: u64,
+    stx_size: u64,
+    stx_blocks: u64,
+    stx_attributes_mask: u64,
+    atime:u32,
+    btime:u32,
+    ctime:u32,
+    mtime:u32,
+    atime_nse:u32,
+    btime_nse:u32,
+    ctime_nse:u32,
+    mtime_nse:u32,
+    stx_rdev_major: u32,
+    stx_rdev_minor: u32,
+    stx_dev_major: u32,
+    stx_dev_minor: u32,
+}
+
+impl VfsNodeAttrX {
+    /// Creates a new `VfsNodeAttrX` with all fields specified
+    pub const fn new(
+        stx_mask: u32,
+        stx_blksize: u32,
+        stx_attributes: u64,
+        stx_nlink: u32,
+        stx_uid: u32,
+        stx_gid: u32,
+        stx_mode: VfsNodePerm,
+        ty: VfsNodeType,
+        stx_ino: u64,
+        stx_size: u64,
+        stx_blocks: u64,
+        stx_attributes_mask: u64,
+        atime: u32,
+        btime: u32,
+        ctime: u32,
+        mtime: u32,
+        atime_nse: u32,
+        btime_nse: u32,
+        ctime_nse: u32,
+        mtime_nse: u32,
+        stx_rdev_major: u32,
+        stx_rdev_minor: u32,
+        stx_dev_major: u32,
+        stx_dev_minor: u32,
+    ) -> Self {
+        Self {
+            stx_mask,
+            stx_blksize,
+            stx_attributes,
+            stx_nlink,
+            stx_uid,
+            stx_gid,
+            stx_mode,
+            ty,
+            stx_ino,
+            stx_size,
+            stx_blocks,
+            stx_attributes_mask,
+            atime,
+            btime,
+            ctime,
+            mtime,
+            atime_nse,
+            btime_nse,
+            ctime_nse,
+            mtime_nse,
+            stx_rdev_major,
+            stx_rdev_minor,
+            stx_dev_major,
+            stx_dev_minor,
+        }
+    }
+    /// Creates a new `VfsNodeAttrX` for a file, with the default file permission
+    pub const fn new_file(stx_size: u64, stx_blocks: u64) -> Self {
+        Self {
+            stx_mask: u32::MAX,
+            stx_blksize: 0,
+            stx_attributes: 0,
+            stx_nlink: 0,
+            stx_uid: 0,
+            stx_gid: 0,
+            stx_mode: VfsNodePerm::default_file(),
+            ty: VfsNodeType::File,
+            stx_ino: 0,
+            stx_size,
+            stx_blocks,
+            stx_attributes_mask: 0,
+            atime: 0,
+            btime: 0,
+            ctime: 0,
+            mtime: 0,
+            atime_nse: 0,
+            btime_nse: 0,
+            ctime_nse: 0,
+            mtime_nse: 0,
+            stx_rdev_major: 0,
+            stx_rdev_minor: 0,
+            stx_dev_major: 0,
+            stx_dev_minor: 0,
+        }
+    }
+    /// Creates a new `VfsNodeAttrX` for a directory, with the default directory permission
+    pub const fn new_dir(stx_size: u64, stx_blocks: u64) -> Self {
+        Self {
+            stx_mask: u32::MAX,
+            stx_blksize: 0,
+            stx_attributes: 0,
+            stx_nlink: 0,
+            stx_uid: 0,
+            stx_gid: 0,
+            stx_mode: VfsNodePerm::default_dir(),
+            ty: VfsNodeType::Dir,
+            stx_ino: 0,
+            stx_size,
+            stx_blocks,
+            stx_attributes_mask: 0,
+            atime: 0,
+            btime: 0,
+            ctime: 0,
+            mtime: 0,
+            atime_nse: 0,
+            btime_nse: 0,
+            ctime_nse: 0,
+            mtime_nse: 0,
+            stx_rdev_major: 0,
+            stx_rdev_minor: 0,
+            stx_dev_major: 0,
+            stx_dev_minor: 0,
+        }
+    }
+    // Getters
+    pub const fn stx_mask(&self) -> u32 { self.stx_mask }
+    pub const fn stx_blksize(&self) -> u32 { self.stx_blksize }
+    pub const fn stx_attributes(&self) -> u64 { self.stx_attributes }
+    pub const fn stx_nlink(&self) -> u32 { self.stx_nlink }
+    pub const fn stx_uid(&self) -> u32 { self.stx_uid }
+    pub const fn stx_gid(&self) -> u32 { self.stx_gid }
+    pub const fn stx_perm(&self) -> VfsNodePerm { self.stx_mode }
+    pub const fn file_type(&self) -> VfsNodeType { self.ty }
+    pub const fn stx_ino(&self) -> u64 { self.stx_ino }
+    pub const fn stx_size(&self) -> u64 { self.stx_size }
+    pub const fn stx_blocks(&self) -> u64 { self.stx_blocks }
+    pub const fn stx_attributes_mask(&self) -> u64 { self.stx_attributes_mask }
+    pub const fn atime(&self) -> u32 { self.atime }
+    pub const fn btime(&self) -> u32 { self.btime }
+    pub const fn ctime(&self) -> u32 { self.ctime }
+    pub const fn mtime(&self) -> u32 { self.mtime }
+    pub const fn atime_nse(&self) -> u32 { self.atime_nse }
+    pub const fn btime_nse(&self) -> u32 { self.btime_nse }
+    pub const fn ctime_nse(&self) -> u32 { self.ctime_nse }
+    pub const fn mtime_nse(&self) -> u32 { self.mtime_nse }
+    pub const fn stx_rdev_major(&self) -> u32 { self.stx_rdev_major }
+    pub const fn stx_rdev_minor(&self) -> u32 { self.stx_rdev_minor }
+    pub const fn stx_dev_major(&self) -> u32 { self.stx_dev_major }
+    pub const fn stx_dev_minor(&self) -> u32 { self.stx_dev_minor }
+    // Setters
+    pub fn set_perm(&mut self, mode: VfsNodePerm) { self.stx_mode = mode; }
+    /// Whether the node is a file.
+    pub const fn is_file(&self) -> bool {
+        self.ty.is_file()
+    }
+    /// Whether the node is a directory.
+    pub const fn is_dir(&self) -> bool {
+        self.ty.is_dir()
+    }
 }
 
 impl VfsDirEntry {
