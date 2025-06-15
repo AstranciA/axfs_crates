@@ -1,5 +1,5 @@
 use alloc::sync::Arc;
-use axfs_vfs::{VfsNodeAttr, VfsNodeOps, VfsResult, impl_vfs_non_dir_default};
+use axfs_vfs::{impl_vfs_non_dir_default, VfsNodeAttr, VfsNodeAttrX, VfsNodeOps, VfsResult};
 use spin::RwLock;
 
 /// 动态文件生成器类型
@@ -22,6 +22,11 @@ impl VfsNodeOps for ProcFile {
     fn get_attr(&self) -> VfsResult<VfsNodeAttr> {
         Ok(VfsNodeAttr::new_file(self.content.len() as u64, 0))
     }
+
+    fn get_attr_x(&self) -> VfsResult<axfs_vfs::VfsNodeAttrX> {
+        Ok(VfsNodeAttrX::new_file(self.content.len() as u64, 0))
+    }
+
 
     fn read_at(&self, offset: u64, buf: &mut [u8]) -> VfsResult<usize> {
         let start = offset as usize;
@@ -56,6 +61,10 @@ impl ProcDynamicFile {
 impl VfsNodeOps for ProcDynamicFile {
     fn get_attr(&self) -> VfsResult<VfsNodeAttr> {
         Ok(VfsNodeAttr::new_file(0, 0)) // 动态文件大小未知
+    }
+
+    fn get_attr_x(&self) -> VfsResult<VfsNodeAttrX> {
+        Ok(VfsNodeAttrX::new_file(0, 0)) // 动态文件大小未知
     }
 
     fn read_at(&self, offset: u64, buf: &mut [u8]) -> VfsResult<usize> {

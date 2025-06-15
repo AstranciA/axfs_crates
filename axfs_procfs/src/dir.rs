@@ -4,7 +4,7 @@ use alloc::collections::BTreeMap;
 use alloc::sync::{Arc, Weak};
 use alloc::{string::String, vec::Vec};
 
-use axfs_vfs::{VfsDirEntry, VfsNodeAttr, VfsNodeOps, VfsNodeRef, VfsNodeType};
+use axfs_vfs::{VfsDirEntry, VfsNodeAttr, VfsNodeAttrX, VfsNodeOps, VfsNodeRef, VfsNodeType};
 use axfs_vfs::{VfsError, VfsResult};
 use spin::RwLock;
 
@@ -206,6 +206,10 @@ impl ProcDir {
 impl VfsNodeOps for ProcDir {
     fn get_attr(&self) -> VfsResult<VfsNodeAttr> {
         Ok(VfsNodeAttr::new_dir(4096, 0))
+    }
+
+    fn get_attr_x(&self) -> VfsResult<axfs_vfs::VfsNodeAttrX> {
+        Ok(VfsNodeAttrX::new_dir(4096, 0))
     }
 
     fn parent(&self) -> Option<VfsNodeRef> {

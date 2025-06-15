@@ -39,14 +39,14 @@
 extern crate alloc;
 
 mod macros;
-mod structs;
+pub mod structs;
 
 pub mod path;
 use core::ffi::{c_char, c_int, c_uint, c_void};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use axerrno::{ax_err, AxError, AxResult};
-
+pub use crate::structs::VfsNodeAttrX;
 pub use self::structs::{FileSystemInfo, VfsDirEntry, VfsNodeAttr, VfsNodePerm, VfsNodeType};
 
 /// A wrapper of [`Arc<dyn VfsNodeOps>`].
@@ -100,6 +100,10 @@ pub trait VfsNodeOps: Send + Sync {
 
     /// Get the attributes of the node.
     fn get_attr(&self) -> VfsResult<VfsNodeAttr> {
+        ax_err!(Unsupported)
+    }
+    ///Get the statx of VfsNode
+    fn get_attr_x(&self) -> VfsResult<VfsNodeAttrX> {
         ax_err!(Unsupported)
     }
     ///Set the attributes of the node

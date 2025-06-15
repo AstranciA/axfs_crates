@@ -1,6 +1,7 @@
 use alloc::collections::BTreeMap;
 use alloc::sync::{Arc, Weak};
-use axfs_vfs::{VfsDirEntry, VfsNodeAttr, VfsNodeOps, VfsNodeRef, VfsNodeType};
+use core::ffi::{c_char, c_void};
+use axfs_vfs::{VfsDirEntry, VfsNodeAttr, VfsNodeAttrX, VfsNodeOps, VfsNodeRef, VfsNodeType};
 use axfs_vfs::{VfsError, VfsResult};
 use spin::RwLock;
 /// The directory node in the device filesystem.
@@ -43,6 +44,10 @@ impl VfsNodeOps for DirNode {
         Ok(VfsNodeAttr::new_dir(4096, 0))
     }
 
+    fn get_attr_x(&self) -> VfsResult<VfsNodeAttrX> {
+        Ok(VfsNodeAttrX::new_dir(4096, 0))
+    }
+    
     fn parent(&self) -> Option<VfsNodeRef> {
         self.parent.read().upgrade()
     }
