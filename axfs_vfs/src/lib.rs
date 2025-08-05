@@ -42,12 +42,12 @@ mod macros;
 pub mod structs;
 
 pub mod path;
-use core::ffi::{c_char, c_int, c_uint, c_void};
+pub use self::structs::{FileSystemInfo, VfsDirEntry, VfsNodeAttr, VfsNodePerm, VfsNodeType};
+pub use crate::structs::VfsNodeAttrX;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use axerrno::{ax_err, AxError, AxResult};
-pub use crate::structs::VfsNodeAttrX;
-pub use self::structs::{FileSystemInfo, VfsDirEntry, VfsNodeAttr, VfsNodePerm, VfsNodeType};
+use core::ffi::{c_char, c_int, c_uint, c_void};
 
 /// A wrapper of [`Arc<dyn VfsNodeOps>`].
 pub type VfsNodeRef = Arc<dyn VfsNodeOps>;
@@ -107,10 +107,10 @@ pub trait VfsNodeOps: Send + Sync {
         ax_err!(Unsupported)
     }
     ///Set the attributes of the node
-    fn set_atime(&self, atime:u32, atime_n:u32) -> VfsResult<usize> {
+    fn set_atime(&self, atime: u32, atime_n: u32) -> VfsResult<usize> {
         ax_err!(Unsupported)
     }
-    fn set_mtime(&self, mtime:u32, mtime_n:u32) -> VfsResult<usize> {
+    fn set_mtime(&self, mtime: u32, mtime_n: u32) -> VfsResult<usize> {
         ax_err!(Unsupported)
     }
     fn get_xattr(
@@ -120,25 +120,24 @@ pub trait VfsNodeOps: Send + Sync {
         buf: *mut c_void,
         buf_size: usize,
         data_size: *mut usize,
-    ) -> VfsResult<usize>{ax_err!(Unsupported)}
+    ) -> VfsResult<usize> {
+        ax_err!(Unsupported)
+    }
     fn set_xattr(
         &self,
         name: *const c_char,
         name_len: usize,
         data: *mut c_void,
         data_size: usize,
-    ) -> VfsResult<usize>{ax_err!(Unsupported)}
-    fn list_xattr(
-        &self,
-        list: *mut c_char,
-        size: usize,
-        ret_size: *mut usize,
-    ) -> VfsResult<usize>{ax_err!(Unsupported)}
-    fn remove_xattr(
-        &self,
-        name: *const c_char,
-        name_len: usize,
-    ) -> VfsResult<usize>{ax_err!(Unsupported)}
+    ) -> VfsResult<usize> {
+        ax_err!(Unsupported)
+    }
+    fn list_xattr(&self, list: *mut c_char, size: usize, ret_size: *mut usize) -> VfsResult<usize> {
+        ax_err!(Unsupported)
+    }
+    fn remove_xattr(&self, name: *const c_char, name_len: usize) -> VfsResult<usize> {
+        ax_err!(Unsupported)
+    }
 
     // file operations:
 
@@ -185,6 +184,11 @@ pub trait VfsNodeOps: Send + Sync {
         ax_err!(Unsupported)
     }
 
+    /// Make a link of the `src_path` and the `dst_path`
+    fn link(&self, _src_path: &str, _dst_path: &str) -> VfsResult {
+        ax_err!(Unsupported)
+    }
+
     /// Remove the node with the given `path` in the directory.
     fn remove(&self, _path: &str) -> VfsResult {
         ax_err!(Unsupported)
@@ -199,7 +203,7 @@ pub trait VfsNodeOps: Send + Sync {
     fn rename(&self, _src_path: &str, _dst_path: &str) -> VfsResult {
         ax_err!(Unsupported)
     }
-    
+
     /// Convert `&self` to [`&dyn Any`][1] that can use
     /// [`Any::downcast_ref`][2].
     ///
