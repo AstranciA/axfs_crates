@@ -291,21 +291,6 @@ impl VfsNodeOps for ProcDir {
         }
     }
 
-    fn remove(&self, path: &str) -> VfsResult {
-        let (name, rest) = split_path(path);
-
-        if let Some(rest) = rest {
-            let entry = self.lookup_entry(name)?;
-            if let ProcEntry::Dir(dir) = entry {
-                dir.remove(rest)
-            } else {
-                Err(VfsError::NotADirectory)
-            }
-        } else {
-            self.remove_node(name)
-        }
-    }
-
     axfs_vfs::impl_vfs_dir_default! {}
 }
 
