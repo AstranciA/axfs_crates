@@ -46,6 +46,7 @@ use core::ffi::{c_char, c_int, c_uint, c_void};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use axerrno::{ax_err, AxError, AxResult};
+use log::debug;
 pub use crate::structs::VfsNodeAttrX;
 pub use self::structs::{FileSystemInfo, VfsDirEntry, VfsNodeAttr, VfsNodePerm, VfsNodeType};
 
@@ -207,6 +208,13 @@ pub trait VfsNodeOps: Send + Sync {
     /// [2]: core::any::Any#method.downcast_ref
     fn as_any(&self) -> &dyn core::any::Any {
         unimplemented!()
+    }
+    fn link(&self, src_path: &str, dst_path: &str) -> VfsResult{
+        ax_err!(Unsupported)
+    }
+    fn read_link(&self, buf: *mut c_char, bufsize: usize) -> VfsResult<usize> {
+        debug!("read_link not implemented for this VfsNodeOps");
+        Err(AxError::InvalidInput)
     }
 }
 
