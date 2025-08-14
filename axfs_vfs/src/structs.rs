@@ -108,6 +108,7 @@ pub enum VfsNodeType {
 }
 
 /// Directory entry.
+#[derive(Debug, Clone, Copy)]
 pub struct VfsDirEntry {
     d_type: VfsNodeType,
     d_name: [u8; 63],

@@ -213,9 +213,7 @@ pub trait VfsNodeOps: Send + Sync {
     fn as_any(&self) -> &dyn core::any::Any {
         unimplemented!()
     }
-    fn link(&self, src_path: &str, dst_path: &str) -> VfsResult{
-        ax_err!(Unsupported)
-    }
+
     fn read_link(&self, buf: *mut c_char, bufsize: usize) -> VfsResult<usize> {
         debug!("read_link not implemented for this VfsNodeOps");
         Err(AxError::InvalidInput)

@@ -98,8 +98,22 @@ impl ProcDir {
     /// 此函数会按顺序搜索静态条目和所有动态生成器。
     pub fn lookup_entry(&self, path: &str) -> VfsResult<ProcEntry> {
         let (name, rest) = split_path(path);
-        if name.is_empty() || name == "." || name == ".." {
-            return Err(VfsError::InvalidInput);
+
+        if name.is_empty() {
+            return Ok(ProcEntry::Dir(self.this.upgrade().unwrap()));
+        }
+
+        if name == "." {
+            return if let Some(rest) = rest {
+                self.lookup_entry(rest)
+            } else {
+                Ok(ProcEntry::Dir(self.this.upgrade().unwrap()))
+            };
+        }
+
+        if name == ".." {
+            log::error!("Not implemented `..` in procfs yet");
+            return Err(VfsError::InvalidInput)
         }
 
         // 1. 首先在静态子节点中查找
