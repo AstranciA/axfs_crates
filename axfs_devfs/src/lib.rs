@@ -12,6 +12,7 @@ use spin::RwLock;
 mod dir;
 mod null;
 mod zero;
+mod urandom;
 // mod sda;
 #[cfg(test)]
 mod tests;
@@ -19,6 +20,7 @@ mod tests;
 pub use self::dir::DirNode;
 pub use self::null::NullDev;
 pub use self::zero::ZeroDev;
+pub use self::urandom::URandomDev;
 
 use alloc::sync::Arc;
 use axfs_vfs::{VfsNodeOps, VfsNodeRef, VfsOps, VfsResult};
